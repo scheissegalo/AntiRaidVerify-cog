@@ -1,0 +1,3 @@
+# AntiRaidVerify has no additional pip dependencies beyond Red Discord Bot.
+# Install Red separately: python3 -m pip install -U Red-DiscordBot
+# Red-DiscordBot>=3.5.0

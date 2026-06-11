@@ -1,0 +1,18 @@
+{
+    "name": "AntiRaidVerify",
+    "short": "Anti spam verification system",
+    "description": "Quarantines suspicious new users and requires verification.",
+    "author": [
+        "Berni Karich"
+    ],
+    "requirements": [],
+    "min_bot_version": "3.5.0",
+    "hidden": false,
+    "install_msg": "Thanks for installing AntiRaidVerify.",
+    "tags": [
+        "moderation",
+        "security",
+        "verification",
+        "antiraid"
+    ]
+}

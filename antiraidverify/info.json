@@ -1,0 +1,12 @@
+{
+    "author": ["AntiRaidVerify"],
+    "description": "Detect suspicious new Discord users and place them into verification quarantine.",
+    "install_msg": "AntiRaidVerify loaded. Run `[p]arv checksetup` and configure roles/channels.",
+    "short": "Anti-raid verification quarantine for new members.",
+    "tags": ["moderation", "security", "verification", "antiraid"],
+    "requirements": [],
+    "min_bot_version": "3.5.0",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
