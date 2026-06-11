@@ -1,19 +1,19 @@
-"""Admin configuration and moderation commands."""
+"""Admin configuration and moderation commands.
+
+This module defines a plain Python mixin class. Commands are registered on the
+AntiRaidVerify cog via multiple inheritance (no Red-specific cog_mixin decorator).
+"""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import Literal, Optional
 
 import discord
 from redbot.core import commands
 
 from ..constants import DEFAULT_SPAM_USERNAME_PATTERNS
 
-if TYPE_CHECKING:
-    from ..antiraidverify import AntiRaidVerify
 
-
-@commands.cog_mixin()
 class AdminCommands:
     """Mixin providing hybrid admin commands for AntiRaidVerify."""
 
@@ -25,7 +25,7 @@ class AdminCommands:
 
     @antiraidverify.command(name="setchannel")
     async def arv_setchannel(
-        self: "AntiRaidVerify", ctx: commands.Context, channel: discord.TextChannel
+        self, ctx: commands.Context, channel: discord.TextChannel
     ) -> None:
         """Set the verification channel for quarantined members."""
         await self.storage.set_guild_value(ctx.guild.id, "verification_channel_id", channel.id)
@@ -33,7 +33,7 @@ class AdminCommands:
 
     @antiraidverify.command(name="setverifiedrole")
     async def arv_setverifiedrole(
-        self: "AntiRaidVerify", ctx: commands.Context, role: discord.Role
+        self, ctx: commands.Context, role: discord.Role
     ) -> None:
         """Set the role granted after successful verification."""
         await self.storage.set_guild_value(ctx.guild.id, "verified_role_id", role.id)
@@ -41,14 +41,14 @@ class AdminCommands:
 
     @antiraidverify.command(name="setunverifiedrole")
     async def arv_setunverifiedrole(
-        self: "AntiRaidVerify", ctx: commands.Context, role: discord.Role
+        self, ctx: commands.Context, role: discord.Role
     ) -> None:
         """Set the quarantine role assigned to suspicious joins."""
         await self.storage.set_guild_value(ctx.guild.id, "unverified_role_id", role.id)
         await ctx.send(f"Unverified role set to {role.mention}.")
 
     @antiraidverify.command(name="threshold")
-    async def arv_threshold(self: "AntiRaidVerify", ctx: commands.Context, score: int) -> None:
+    async def arv_threshold(self, ctx: commands.Context, score: int) -> None:
         """Set the suspicion score threshold (default: 5)."""
         if score < 1:
             await ctx.send("Threshold must be at least 1.")
@@ -57,7 +57,7 @@ class AdminCommands:
         await ctx.send(f"Score threshold set to **{score}**.")
 
     @antiraidverify.command(name="accountage")
-    async def arv_accountage(self: "AntiRaidVerify", ctx: commands.Context, days: int) -> None:
+    async def arv_accountage(self, ctx: commands.Context, days: int) -> None:
         """Set account age (days) used for the young-account scoring factor."""
         if days < 0:
             await ctx.send("Account age must be 0 or greater.")
@@ -66,7 +66,7 @@ class AdminCommands:
         await ctx.send(f"Account age threshold set to **{days}** days.")
 
     @antiraidverify.command(name="agebypass")
-    async def arv_agebypass(self: "AntiRaidVerify", ctx: commands.Context, days: int) -> None:
+    async def arv_agebypass(self, ctx: commands.Context, days: int) -> None:
         """Skip quarantine for accounts older than this many days (0 = disabled)."""
         if days < 0:
             await ctx.send("Age bypass must be 0 or greater.")
@@ -78,7 +78,7 @@ class AdminCommands:
             await ctx.send(f"Accounts older than **{days}** days will bypass quarantine.")
 
     @antiraidverify.command(name="timeout")
-    async def arv_timeout(self: "AntiRaidVerify", ctx: commands.Context, hours: int) -> None:
+    async def arv_timeout(self, ctx: commands.Context, hours: int) -> None:
         """Set verification timeout in hours (default: 8)."""
         if hours < 1:
             await ctx.send("Timeout must be at least 1 hour.")
@@ -88,7 +88,7 @@ class AdminCommands:
 
     @antiraidverify.command(name="timeoutaction")
     async def arv_timeoutaction(
-        self: "AntiRaidVerify",
+        self,
         ctx: commands.Context,
         action: Literal["kick", "ban"],
     ) -> None:
@@ -97,7 +97,7 @@ class AdminCommands:
         await ctx.send(f"Timeout action set to **{action}**.")
 
     @antiraidverify.command(name="banduration")
-    async def arv_banduration(self: "AntiRaidVerify", ctx: commands.Context, hours: int) -> None:
+    async def arv_banduration(self, ctx: commands.Context, hours: int) -> None:
         """Set temporary ban duration in hours (0 = permanent ban)."""
         if hours < 0:
             await ctx.send("Ban duration must be 0 or greater.")
@@ -114,7 +114,7 @@ class AdminCommands:
 
     @arv_whitelist.command(name="add")
     async def arv_whitelist_add(
-        self: "AntiRaidVerify", ctx: commands.Context, role: discord.Role
+        self, ctx: commands.Context, role: discord.Role
     ) -> None:
         """Add a role to the verification whitelist."""
         settings = await self.storage.get_guild_settings(ctx.guild.id)
@@ -128,7 +128,7 @@ class AdminCommands:
 
     @arv_whitelist.command(name="remove")
     async def arv_whitelist_remove(
-        self: "AntiRaidVerify", ctx: commands.Context, role: discord.Role
+        self, ctx: commands.Context, role: discord.Role
     ) -> None:
         """Remove a role from the verification whitelist."""
         settings = await self.storage.get_guild_settings(ctx.guild.id)
@@ -138,26 +138,26 @@ class AdminCommands:
 
     @antiraidverify.command(name="logchannel")
     async def arv_logchannel(
-        self: "AntiRaidVerify", ctx: commands.Context, channel: discord.TextChannel
+        self, ctx: commands.Context, channel: discord.TextChannel
     ) -> None:
         """Set the channel for AntiRaidVerify audit logs."""
         await self.storage.set_guild_value(ctx.guild.id, "log_channel_id", channel.id)
         await ctx.send(f"Log channel set to {channel.mention}.")
 
     @antiraidverify.command(name="enable")
-    async def arv_enable(self: "AntiRaidVerify", ctx: commands.Context) -> None:
+    async def arv_enable(self, ctx: commands.Context) -> None:
         """Enable AntiRaidVerify for this server."""
         await self.storage.set_guild_value(ctx.guild.id, "enabled", True)
         await ctx.send("AntiRaidVerify **enabled**.")
 
     @antiraidverify.command(name="disable")
-    async def arv_disable(self: "AntiRaidVerify", ctx: commands.Context) -> None:
+    async def arv_disable(self, ctx: commands.Context) -> None:
         """Disable AntiRaidVerify for this server."""
         await self.storage.set_guild_value(ctx.guild.id, "enabled", False)
         await ctx.send("AntiRaidVerify **disabled**.")
 
     @antiraidverify.command(name="config")
-    async def arv_config(self: "AntiRaidVerify", ctx: commands.Context) -> None:
+    async def arv_config(self, ctx: commands.Context) -> None:
         """View current AntiRaidVerify configuration."""
         settings = await self.storage.get_guild_settings(ctx.guild.id)
         guild = ctx.guild
@@ -189,10 +189,20 @@ class AdminCommands:
         embed.add_field(
             name="Ban Duration (hours)", value=str(settings.ban_duration_hours), inline=True
         )
-        embed.add_field(name="Verification Channel", value=mention_channel(settings.verification_channel_id), inline=False)
-        embed.add_field(name="Verified Role", value=mention_role(settings.verified_role_id), inline=True)
-        embed.add_field(name="Unverified Role", value=mention_role(settings.unverified_role_id), inline=True)
-        embed.add_field(name="Log Channel", value=mention_channel(settings.log_channel_id), inline=True)
+        embed.add_field(
+            name="Verification Channel",
+            value=mention_channel(settings.verification_channel_id),
+            inline=False,
+        )
+        embed.add_field(
+            name="Verified Role", value=mention_role(settings.verified_role_id), inline=True
+        )
+        embed.add_field(
+            name="Unverified Role", value=mention_role(settings.unverified_role_id), inline=True
+        )
+        embed.add_field(
+            name="Log Channel", value=mention_channel(settings.log_channel_id), inline=True
+        )
         embed.add_field(
             name="Whitelist Roles",
             value=", ".join(mention_role(r) for r in settings.whitelist_role_ids) or "None",
@@ -224,20 +234,20 @@ class AdminCommands:
 
     @antiraidverify.command(name="verify")
     async def arv_verify(
-        self: "AntiRaidVerify", ctx: commands.Context, member: discord.Member
+        self, ctx: commands.Context, member: discord.Member
     ) -> None:
         """Manually verify a quarantined member."""
         await self.manual_verify(ctx, member)
 
     @antiraidverify.command(name="quarantine")
     async def arv_quarantine(
-        self: "AntiRaidVerify", ctx: commands.Context, member: discord.Member
+        self, ctx: commands.Context, member: discord.Member
     ) -> None:
         """Manually quarantine a member and send a verification prompt."""
         await self.manual_quarantine(ctx, member)
 
     @antiraidverify.command(name="checksetup")
-    async def arv_checksetup(self: "AntiRaidVerify", ctx: commands.Context) -> None:
+    async def arv_checksetup(self, ctx: commands.Context) -> None:
         """Validate roles, hierarchy, and channel configuration."""
         settings = await self.storage.get_guild_settings(ctx.guild.id)
         issues = self.quarantine.validate_settings(ctx.guild, settings)
@@ -251,7 +261,10 @@ class AdminCommands:
                 f"• {issue}" for issue in issues
             )
         else:
-            embed.description = "Configuration looks good! Ensure channel permission overwrites are set as documented in the README."
+            embed.description = (
+                "Configuration looks good! Ensure channel permission overwrites are "
+                "set as documented in the README."
+            )
 
         me = ctx.guild.me
         if me:

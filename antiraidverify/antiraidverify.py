@@ -9,6 +9,7 @@ from typing import Dict
 import discord
 from redbot.core import commands
 
+from .commands.admin import AdminCommands
 from .logging import EventLogger
 from .massjoin import MassJoinTracker
 from .models import ScoreResult
@@ -17,13 +18,16 @@ from .scoring import score_member
 from .storage import Storage
 from .timeout import TimeoutManager
 from .verification import VerificationManager, VerifyView
-from .commands.admin import AdminCommands
 
 log = logging.getLogger("red.antiraidverify")
 
 
 class AntiRaidVerify(AdminCommands, commands.Cog):
-    """Detect suspicious joins and quarantine members until verified."""
+    """Detect suspicious joins and quarantine members until verified.
+
+    AdminCommands is a plain Python mixin; commands.Cog must remain the final
+    base class so Red registers listeners and command metadata correctly.
+    """
 
     __version__ = "1.0.0"
 
