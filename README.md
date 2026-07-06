@@ -206,7 +206,7 @@ antiraidverify/
 | Cannot assign roles | Run `[p]arv checksetup`; move bot role above Unverified/Verified |
 | Slash commands missing | Run `[p]slash sync` |
 | Members see all channels while unverified | Fix channel permission overwrites for Unverified role |
-| Timeouts not working | Ensure bot has Kick/Ban permission |
+| Timeouts not working | Ensure bot has Kick/Ban permission; reload cog after update; timeout checks run every 60s (wait up to 1 extra minute); changing `[p]arv timeout` only affects **new** quarantines |
 
 ## License
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -27,6 +28,7 @@ class TimeoutManager:
 
     async def run(self) -> None:
         await self.cog.bot.wait_until_ready()
+        log.info("AntiRaidVerify timeout loop started.")
         while True:
             try:
                 await self._process_expired()
@@ -37,17 +39,22 @@ class TimeoutManager:
             await asyncio.sleep(TIMEOUT_POLL_INTERVAL_SECONDS)
 
     async def _process_expired(self) -> None:
-        import time
-
         now = time.time()
         pending_list = await self.cog.storage.get_all_pending()
-        for pending in pending_list:
-            if pending.expires_at > now:
-                continue
+        if not pending_list:
+            return
+
+        expired = [pending for pending in pending_list if pending.expires_at <= now]
+        if not expired:
+            return
+
+        log.info("Processing %s expired verification(s).", len(expired))
+        for pending in expired:
             guild = self.cog.bot.get_guild(pending.guild_id)
             if guild is None:
                 await self.cog.storage.clear_pending(pending.guild_id, pending.user_id)
                 continue
+
             settings = await self.cog.storage.get_guild_settings(guild.id)
             member = guild.get_member(pending.user_id)
             if member is None:
@@ -68,6 +75,7 @@ class TimeoutManager:
     ) -> None:
         reason = "AntiRaidVerify: verification timeout"
         action = settings.timeout_action
+        success = False
 
         try:
             if action == "ban":
@@ -86,15 +94,40 @@ class TimeoutManager:
             await self.cog.event_logger.log_error(
                 guild, f"timeout {action}", Exception("Missing kick/ban permissions")
             )
+            log.warning(
+                "Failed to %s %s (%s) in guild %s: missing permissions",
+                action,
+                member.id,
+                member,
+                guild.id,
+            )
         except discord.HTTPException as exc:
             await self.cog.event_logger.log_error(guild, f"timeout {action}", exc)
+            log.warning(
+                "Failed to %s %s (%s) in guild %s: %s",
+                action,
+                member.id,
+                member,
+                guild.id,
+                exc,
+            )
         else:
+            success = True
             await self.cog.event_logger.log_timeout_action(
                 guild, member, action, reason
             )
+            log.info(
+                "Timed out %s (%s) in guild %s via %s",
+                member.id,
+                member,
+                guild.id,
+                action,
+            )
 
-        await self._cleanup(guild, pending, settings)
+        if success:
+            await self._cleanup(guild, pending, settings)
 
     async def _cleanup(self, guild, pending, settings: GuildSettings) -> None:
-        await self.cog.verification.cleanup_message(guild, pending, settings)
+        if self.cog.verification is not None:
+            await self.cog.verification.cleanup_message(guild, pending, settings)
         await self.cog.storage.clear_pending(pending.guild_id, pending.user_id)

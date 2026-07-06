@@ -29,6 +29,10 @@ log = logging.getLogger("red.antiraidverify.storage")
 CONFIG_IDENTIFIER = 0x41525631  # "ARV1"
 
 
+def _is_pending_record(data: Any) -> bool:
+    return isinstance(data, dict) and bool(data.get("message_id"))
+
+
 class Storage:
     """Wraps Red Config for guild settings and pending verification state."""
 
@@ -83,7 +87,7 @@ class Storage:
         self, guild_id: int, user_id: int
     ) -> Optional[PendingVerification]:
         data = await self.config.custom("PendingVerification", guild_id, user_id).all()
-        if not data or not data.get("message_id"):
+        if not _is_pending_record(data):
             return None
         return PendingVerification.from_dict(guild_id, user_id, data)
 
@@ -95,16 +99,20 @@ class Storage:
         group = self.config.custom(
             "PendingVerification", pending.guild_id, pending.user_id
         )
-        await group.set_raw(
-            message_id=pending.message_id,
-            channel_id=pending.channel_id,
-            score=pending.score,
-            factors=pending.factors,
-            joined_at=pending.joined_at,
-            expires_at=pending.expires_at,
-        )
+        await group.set(pending.to_dict())
         index = self.config.custom("MessageIndex", pending.message_id)
-        await index.set_raw(guild_id=pending.guild_id, user_id=pending.user_id)
+        await index.set(
+            {
+                "guild_id": pending.guild_id,
+                "user_id": pending.user_id,
+            }
+        )
+        log.debug(
+            "Saved pending verification guild=%s user=%s expires_at=%s",
+            pending.guild_id,
+            pending.user_id,
+            pending.expires_at,
+        )
 
     async def clear_pending(self, guild_id: int, user_id: int) -> None:
         pending = await self.get_pending(guild_id, user_id)
@@ -120,16 +128,33 @@ class Storage:
 
     async def get_all_pending(self) -> list[PendingVerification]:
         raw = await self.config.custom("PendingVerification").all()
+        if not isinstance(raw, dict):
+            return []
+
         results: list[PendingVerification] = []
         for guild_key, users in raw.items():
-            guild_id = int(guild_key)
+            try:
+                guild_id = int(guild_key)
+            except (TypeError, ValueError):
+                continue
             if not isinstance(users, dict):
                 continue
             for user_key, data in users.items():
-                user_id = int(user_key)
-                if not data or not data.get("message_id"):
+                try:
+                    user_id = int(user_key)
+                except (TypeError, ValueError):
                     continue
-                results.append(PendingVerification.from_dict(guild_id, user_id, data))
+                if not _is_pending_record(data):
+                    continue
+                try:
+                    results.append(PendingVerification.from_dict(guild_id, user_id, data))
+                except (KeyError, TypeError, ValueError) as exc:
+                    log.warning(
+                        "Skipping invalid pending record guild=%s user=%s: %s",
+                        guild_id,
+                        user_id,
+                        exc,
+                    )
         return results
 
     async def reconcile_pending_messages(self, cog: "AntiRaidVerify") -> None:
